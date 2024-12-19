@@ -41,6 +41,12 @@ export class XtbConverter extends AbstractConverter {
                     else if (type.indexOf("stocks/etf sale") > -1 || type.indexOf("ações/etf vende") > -1) {
                         return "sell";
                     }
+                    else if (type.indexOf("withholding tax") > -1 ) {
+                        return "tax";
+                    }
+                    else if (type.indexOf("dividend") > -1) {
+                        return "dividend";
+                    }
                     else if (type.indexOf("free funds interests") > -1) {
                         return "interest";
                     }
@@ -162,7 +168,7 @@ export class XtbConverter extends AbstractConverter {
      * @inheritdoc
      */
     public isIgnoredRecord(record: XtbRecord): boolean {
-        let ignoredRecordTypes = ["deposit", "withdrawal"];
+        let ignoredRecordTypes = ["deposit", "withdrawal", "transfer", "tax", "dividend"];
 console.log(record)
         return ignoredRecordTypes.some(t => record.type.toLocaleLowerCase().indexOf(t) > -1)
     }
