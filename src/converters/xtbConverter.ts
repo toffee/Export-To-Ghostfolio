@@ -35,19 +35,19 @@ export class XtbConverter extends AbstractConverter {
                 if (context.column === "type") {
                     const type = columnValue.toLocaleLowerCase();
 
-                    if (type.indexOf("stocks/etf purchase") > -1 || type.indexOf("ações/etf compra") > -1) {
+                    if (type.indexOf("stocks/etf purchase") > -1 || type.indexOf("stock purchase") > -1 || type.indexOf("ações/etf compra") > -1) {
                         return "buy";
                     }
-                    else if (type.indexOf("stocks/etf sale") > -1 || type.indexOf("ações/etf vende") > -1) {
+                    else if (type.indexOf("stocks/etf sale") > -1 || type.indexOf("stock sale") > -1 || type.indexOf("ações/etf vende") > -1) {
                         return "sell";
                     }
-                    else if (type.indexOf("sec fee") > -1 || type.indexOf("swap") > -1 || type.indexOf("commission") > -1 || type.indexOf("free funds interests tax") > -1) {
+                    else if (type.indexOf("sec fee") > -1 || type.indexOf("swap") > -1 || type.indexOf("commission") > -1 || type.indexOf("free funds interests tax") > -1 || type.indexOf("free-funds interest tax") > -1) {
                         return "fee";
                     }
-                    else if (type.indexOf("free funds interests") > -1) {
+                    else if (type.indexOf("free funds interests") > -1  || type.indexOf("free-funds interest") > -1) {
                         return "interest";
                     }
-                    else if (type.indexOf("dividend") > -1 || type.indexOf("spin off") > -1) { //verify spinoff
+                    else if (type.indexOf("dividend") > -1 || type.indexOf("divident") > -1 || type.indexOf("spin off") > -1) { //verify spinoff
                         return "dividend";
                     }
                     else if (type.indexOf("profit/loss") > -1) {
@@ -119,6 +119,7 @@ export class XtbConverter extends AbstractConverter {
 
             for (let idx = 0; idx < records.length; idx++) {
                 const record = records[idx];
+                //console.log("[i] Record: " + record.id + " | " + record.type + " | " + record.time + " | " + record.symbol);
 
                 // Check if the record should be ignored.
                 if (this.isIgnoredRecord(record)) {
@@ -264,7 +265,7 @@ export class XtbConverter extends AbstractConverter {
      * @inheritdoc
      */
     public isIgnoredRecord(record: XtbRecord): boolean {
-        let ignoredRecordTypes = ["deposit", "withdrawal", "tax", "transfer"];
+        let ignoredRecordTypes = ["deposit", "withdrawal", "tax", "transfer", "fee", "interest"];
 
         return ignoredRecordTypes.some(t => record.type.toLocaleLowerCase().indexOf(t) > -1)
     }
