@@ -19,9 +19,11 @@ import { FinpensionConverter } from "./converters/finpensionConverter";
 import { FreetradeConverter } from "./converters/freetradeConverter";
 import { GhostfolioExport } from "./models/ghostfolioExport";
 import { IbkrConverter } from "./converters/ibkrConverter";
+import { InvestEngineConverter } from "./converters/investEngineConverter";
 import { InvestimentalConverter } from "./converters/investimentalConverter";
 import { ParqetConverter } from "./converters/parqetConverter";
 import { RabobankConverter } from "./converters/rabobankConverter";
+import { RelaiConverter } from "./converters/relaiConverter";
 import { RevolutConverter } from "./converters/revolutConverter";
 import { SaxoConverter } from "./converters/saxoConverter";
 import { SchwabConverter } from "./converters/schwabConverter";
@@ -170,6 +172,11 @@ async function createConverter(converterType: string, securityService?: Security
             console.log("[i] Processing file using IBKR converter");
             converter = new IbkrConverter(securityService);
             break;
+        case "ie":
+        case "investengine":
+            console.log("[i] Processing file using InvestEngine converter");
+            converter = new InvestEngineConverter(securityService);
+            break;
         case "investimental":
             console.log("[i] Processing file using Investimental converter");
             converter = new InvestimentalConverter(securityService);
@@ -181,6 +188,10 @@ async function createConverter(converterType: string, securityService?: Security
         case "rabobank":
             console.log("[i] Processing file using Rabobank converter");
             converter = new RabobankConverter(securityService);
+            break;
+        case "relai":
+            console.log("[i] Processing file using Relai converter");
+            converter = new RelaiConverter(securityService);
             break;
         case "revolut":
             console.log("[i] Processing file using Revolut converter");

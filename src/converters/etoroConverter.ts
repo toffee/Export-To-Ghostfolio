@@ -46,7 +46,7 @@ export class EtoroConverter extends AbstractConverter {
                     else if (action.indexOf("interest") > -1) {
                         return "interest";
                     }
-                    else if (action.indexOf("fee") > -1) {
+                    else if (action.indexOf("fee") > -1 || action.indexOf("sdrt") > -1) {
                         return "fee";
                     }
                     else if (action.indexOf("refund") > -1) {
@@ -169,7 +169,7 @@ export class EtoroConverter extends AbstractConverter {
                     // Add record to export.
                     result.activities.push({
                         accountId: process.env.GHOSTFOLIO_ACCOUNT_ID,
-                        comment: "",
+                        comment: null,
                         fee: 0,
                         quantity: record.units,
                         type: GhostfolioOrderType[record.type],

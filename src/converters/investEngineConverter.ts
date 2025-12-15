@@ -1,14 +1,14 @@
 import dayjs from "dayjs";
 import { parse } from "csv-parse";
+import { InvestEngineRecord } from "../models/investEngineRecord";
 import { AbstractConverter } from "./abstractconverter";
 import { SecurityService } from "../securityService";
 import { GhostfolioExport } from "../models/ghostfolioExport";
 import YahooFinanceRecord from "../models/yahooFinanceRecord";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { TradeRepublicRecord } from "../models/tradeRepublicRecord";
 import { GhostfolioOrderType } from "../models/ghostfolioOrderType";
 
-export class TradeRepublicConverter extends AbstractConverter {
+export class InvestEngineConverter extends AbstractConverter {
 
     constructor(securityService: SecurityService) {
         super(securityService);
@@ -23,49 +23,40 @@ export class TradeRepublicConverter extends AbstractConverter {
 
         // Parse the CSV and convert to Ghostfolio import format.
         parse(input, {
-            delimiter: ";",
+            delimiter: ",",
             fromLine: 2,
             columns: this.processHeaders(input),
             cast: (columnValue, context) => {
 
                 // Custom mapping below.
 
-                // Convert actions to Ghostfolio type.
+                // Convert transaction types to Ghostfolio type.
                 if (context.column === "transactionType") {
-                    const action = columnValue.toLocaleLowerCase();
+                    const transactionType = columnValue.toLowerCase();
 
-                    if (action.indexOf("dividend") > -1) {
-                        return "dividend";
+                    if (transactionType === "buy") {
+                        return "buy";
                     }
+                    else if (transactionType === "sell") {
+                        return "sell";
+                    }
+                    // Add dividend in the future?
                 }
 
+                // Remove the pound sign (£) from any field.
+                columnValue = columnValue.replace(/£/g, "");
+
                 // Parse numbers to floats (from string).
-                if (context.column === "value" ||
-                    context.column === "amount" ||
-                    context.column === "costs" ||
-                    context.column === "tax") {
+                if (context.column === "quantity" ||
+                    context.column === "sharePrice" ||
+                    context.column === "totalTradeValue") {
 
-                    if (columnValue === "") {
-                        return 0;
-                    }
-
-                    return parseFloat(columnValue.replace(",", "."));
+                    return Number.parseFloat(columnValue || "0");
                 }
 
                 return columnValue;
-            },
-            on_record: (record: TradeRepublicRecord) => {
-
-                if (["verkoop", "sell"].some(t => record.transactionType.toLocaleLowerCase().indexOf(t) > -1)) {
-                    record.transactionType = "sell";
-                }
-                if (["aankoop", "buy"].some(t => record.transactionType.toLocaleLowerCase().indexOf(t) > -1)) {
-                    record.transactionType = "buy";
-                }
-
-                return record;
             }
-        }, async (err, records: TradeRepublicRecord[]) => {
+        }, async (err, records: InvestEngineRecord[]) => {
 
             try {
 
@@ -77,6 +68,7 @@ export class TradeRepublicConverter extends AbstractConverter {
                         errorMsg += ` Details: ${err.message}`
                     }
 
+                    this.progress.stop();
                     return errorCallback(new Error(errorMsg))
                 }
 
@@ -95,45 +87,49 @@ export class TradeRepublicConverter extends AbstractConverter {
                 for (let idx = 0; idx < records.length; idx++) {
                     const record = records[idx];
 
-                    // Check if the record should be ignored.
                     if (this.isIgnoredRecord(record)) {
                         bar1.increment();
                         continue;
                     }
 
+                    // Extract security name and ISIN from the combined field.
+                    const securityParts = record.securityIsin.split(" / ISIN ");
+                    const securityName = securityParts[0].trim();
+                    const isin = securityParts.length > 1 ? securityParts[1].trim() : null;
+
                     let security: YahooFinanceRecord;
                     try {
                         security = await this.securityService.getSecurity(
-                            record.isin,
+                            isin,
                             null,
-                            record.note,
-                            "EUR",
+                            null,
+                            "GBP", // InvestEngine uses GBP.
                             this.progress);
                     }
                     catch (err) {
-                        this.logQueryError(record.note, idx + 2);
+                        this.logQueryError(isin || securityName, idx + 2);
+                        this.progress.stop();
                         return errorCallback(err);
                     }
 
                     // Log whenever there was no match found.
                     if (!security) {
-                        this.progress.log(`[i] No result found for ${record.transactionType} action for ${record.isin}! Please add this manually..\n`);
+                        this.progress.log(`[i] No result found for ${record.transactionType} action for ${securityName} (ISIN: ${isin}) with currency GBP! Please add this manually..\n`);
                         bar1.increment();
                         continue;
                     }
 
-                    const date = dayjs(`${record.date}`, "YYYY-MM-DD");
-                    const unitPrice = Math.abs(parseFloat((record.value / record.amount).toFixed(2)));
+                    const date = dayjs(record.tradeDateTime, "DD/MM/YY HH:mm:ss");
 
                     // Add record to export.
                     result.activities.push({
                         accountId: process.env.GHOSTFOLIO_ACCOUNT_ID,
                         comment: null,
-                        fee: Math.abs(record.costs),
-                        quantity: record.transactionType === "dividend" ? 1 : Math.abs(record.amount),
+                        fee: 0,
+                        quantity: record.quantity,
                         type: GhostfolioOrderType[record.transactionType],
-                        unitPrice: record.transactionType === "dividend" ? record.value : unitPrice,
-                        currency: "EUR",
+                        unitPrice: record.sharePrice,
+                        currency: "GBP",
                         dataSource: "YAHOO",
                         date: date.format("YYYY-MM-DDTHH:mm:ssZ"),
                         symbol: security.symbol
@@ -158,28 +154,10 @@ export class TradeRepublicConverter extends AbstractConverter {
     /**
      * @inheritdoc
      */
-    protected processHeaders(_: string): string[] {
+    public isIgnoredRecord(record: InvestEngineRecord): boolean {
 
-        // Generic header mapping from the TradeRepublic CSV export.
-        const csvHeaders = [
-            "date",
-            "transactionType",
-            "value",
-            "note",
-            "isin",
-            "amount",
-            "costs",
-            "tax"]
+        // Currently there are no records to ignore.
 
-        return csvHeaders;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public isIgnoredRecord(record: TradeRepublicRecord): boolean {
-        const ignoredRecordTypes = ["onttrekking", "storting", "interest", "removal", "deposit"];
-
-        return ignoredRecordTypes.some(t => record.transactionType.toLocaleLowerCase().indexOf(t) > -1)
+        return false;
     }
 }

@@ -47,6 +47,9 @@ export class FinpensionConverter extends AbstractConverter {
                     else if (action.indexOf("fee") > -1) {
                         return "fee";
                     }
+                    else if (action.indexOf("interest") > -1) {
+                        return "interest";
+                    }
                 }
 
                 // Parse numbers to floats (from string).
@@ -94,19 +97,20 @@ export class FinpensionConverter extends AbstractConverter {
                         continue;
                     }
 
-                    // Fees do not have a security, so add those immediately.
-                    if (record.category.toLocaleLowerCase() === "fee") {
+                    // Fees and interests do not have a security, so add those immediately.
+                    const categoryLower = record.category.toLocaleLowerCase();
+                    if (categoryLower === "fee" || categoryLower === "interest") {
 
-                        const feeAmount = Math.abs(record.cashFlow);
+                        const amount = Math.abs(record.cashFlow);
 
-                        // Add fees record to export.
+                        // Add fee or interest record to export.
                         result.activities.push({
                             accountId: process.env.GHOSTFOLIO_ACCOUNT_ID,
-                            comment: "",
-                            fee: feeAmount,
+                            comment: null,
+                            fee: categoryLower === "fee" ? amount : 0,
                             quantity: 1,
                             type: GhostfolioOrderType[record.category],
-                            unitPrice: feeAmount,
+                            unitPrice: amount,
                             currency: record.assetCurrency,
                             dataSource: "MANUAL",
                             date: dayjs(record.date).format("YYYY-MM-DDTHH:mm:ssZ"),
@@ -151,7 +155,7 @@ export class FinpensionConverter extends AbstractConverter {
                     // Add record to export.
                     result.activities.push({
                         accountId: process.env.GHOSTFOLIO_ACCOUNT_ID,
-                        comment: "",
+                        comment: null,
                         fee: 0,
                         quantity: numberOfShares,
                         type: GhostfolioOrderType[record.category],
