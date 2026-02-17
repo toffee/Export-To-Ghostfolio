@@ -9,11 +9,13 @@ import { BitvavoConverter } from "./converters/bitvavoConverter";
 import { BuxConverter } from "./converters/buxConverter";
 import { CoinbaseConverter } from "./converters/coinbaseConverter";
 import { CointrackingConverter } from "./converters/cointrackingConverter";
+import { CryptoComConverter } from "./converters/cryptocomConverter";
 import { DeGiroConverter } from "./converters/degiroConverter";
 import { DeGiroConverterV2 } from "./converters/degiroConverterV2";
 import { DeGiroConverterV3 } from "./converters/degiroConverterV3";
 import { DeltaConverter } from "./converters/deltaConverter";
 import { DirectaConverter } from "./converters/directaConverter";
+import { DisnatConverter } from "./converters/disnatConverter";
 import { EtoroConverter } from "./converters/etoroConverter";
 import { FinpensionConverter } from "./converters/finpensionConverter";
 import { FreetradeConverter } from "./converters/freetradeConverter";
@@ -129,6 +131,10 @@ async function createConverter(converterType: string, securityService?: Security
             console.log("[i] Processing file using CoinTracking converter");
             converter = new CointrackingConverter(securityService);
             break;
+        case "cryptocom":
+            console.log("[i] Processing file using Crypto.com converter");
+            converter = new CryptoComConverter(securityService);
+            break;
         case "degiro-v1":
             console.log("[i] Processing file using DeGiro converter (V1)");
             console.log("[i] NOTE: This version of the DeGiro converter is deprecated and will no longer receive updates.");
@@ -153,6 +159,10 @@ async function createConverter(converterType: string, securityService?: Security
         case "directa":
             console.log("[i] Processing file using Directa converter, this is an experimental converter!");
             converter = new DirectaConverter(securityService);
+            break;
+        case "disnat":
+            console.log("[i] Processing file using Disnat converter");
+            converter = new DisnatConverter(securityService);
             break;
         case "etoro":
             console.log("[i] Processing file using Etoro converter");

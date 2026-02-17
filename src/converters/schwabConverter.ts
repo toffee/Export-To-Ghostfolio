@@ -7,6 +7,7 @@ import { GhostfolioExport } from "../models/ghostfolioExport";
 import YahooFinanceRecord from "../models/yahooFinanceRecord";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { GhostfolioOrderType } from "../models/ghostfolioOrderType";
+import { getTags } from "../helpers/tagHelpers";
 
 export class SchwabConverter extends AbstractConverter {
 
@@ -60,7 +61,8 @@ export class SchwabConverter extends AbstractConverter {
                     else if (action.indexOf("dividend") > -1 ||
                         action.indexOf("qual") > -1 ||
                         action.endsWith("reinvest") ||
-                        action.indexOf("cash div") > -1) {
+                        action.indexOf("cash div") > -1 ||
+                        action.indexOf("cash in lieu") > -1) {
                         return "dividend";
                     }
                     else if (action.indexOf("advisor fee") > -1 ||
@@ -153,7 +155,8 @@ export class SchwabConverter extends AbstractConverter {
                             currency: "USD",
                             dataSource: "MANUAL",
                             date: date.format("YYYY-MM-DDTHH:mm:ssZ"),
-                            symbol: record.description
+                            symbol: record.description,
+                            tags: getTags()
                         });
 
                         bar1.increment();
@@ -213,7 +216,8 @@ export class SchwabConverter extends AbstractConverter {
                         currency: "USD",
                         dataSource: "YAHOO",
                         date: date.format("YYYY-MM-DDTHH:mm:ssZ"),
-                        symbol: security.symbol
+                        symbol: security.symbol,
+                        tags: getTags()
                     });
 
                     bar1.increment();

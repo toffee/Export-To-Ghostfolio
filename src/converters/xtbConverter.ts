@@ -7,6 +7,7 @@ import { GhostfolioExport } from "../models/ghostfolioExport";
 import YahooFinanceRecord from "../models/yahooFinanceRecord";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { GhostfolioOrderType } from "../models/ghostfolioOrderType";
+import { getTags } from "../helpers/tagHelpers";
 
 export class XtbConverter extends AbstractConverter {
 
@@ -146,6 +147,7 @@ export class XtbConverter extends AbstractConverter {
                             dataSource: "MANUAL",
                             date: date.format("YYYY-MM-DDTHH:mm:ssZ"),
                             symbol: record.comment,
+                            tags: getTags()
                         });
 
                         bar1.increment();
@@ -166,6 +168,7 @@ export class XtbConverter extends AbstractConverter {
                             dataSource: "MANUAL",
                             date: date.format("YYYY-MM-DDTHH:mm:ssZ"),
                             symbol: record.comment,
+                            tags: getTags()
                         });
 
                         bar1.increment();
@@ -235,6 +238,7 @@ export class XtbConverter extends AbstractConverter {
                         dataSource: "YAHOO",
                         date: date.format("YYYY-MM-DDTHH:mm:ssZ"),
                         symbol: security.symbol,
+                        tags: getTags()
                     });
 
                     bar1.increment();
